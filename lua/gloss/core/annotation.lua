@@ -189,6 +189,18 @@ function M.set_collapsed(bufnr, id, collapsed)
   end
 end
 
+--- Update an annotation's content (used by GlossEdit).
+--- Preserves id, created_at, and position.
+--- @param bufnr integer
+--- @param id string
+--- @param content string New markdown content
+function M.update_content(bufnr, id, content)
+  local ann = M.find_by_id(bufnr, id)
+  if ann then
+    ann.content = content
+  end
+end
+
 --- Update an annotation's position (used by tracker).
 --- @param bufnr integer
 --- @param id string

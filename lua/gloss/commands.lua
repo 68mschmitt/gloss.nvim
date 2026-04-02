@@ -100,9 +100,23 @@ function M.register(annotation_mod, store_mod, tracker_mod)
         -- Charwise visual on a single line: word-level annotation
         local start_pos = vim.fn.getpos("'<")
         local end_pos = vim.fn.getpos("'>")
-        col_start = start_pos[3] - 1 -- 0-indexed
-        col_end = end_pos[3] -- exclusive end (getpos is 1-indexed inclusive)
+        col_start = start_pos[3] - 1 -- 0-indexed byte offset
+
+        -- Compute exclusive end accounting for multi-byte characters
+        local line_text = vim.api.nvim_buf_get_lines(bufnr, line_end, line_end + 1, false)[1] or ''
+        local end_byte = end_pos[3] - 1 -- 0-indexed byte of last selected char
+        local char_idx = vim.fn.charidx(line_text, end_byte)
+        local next_byte = vim.fn.byteidx(line_text, char_idx + 1)
+        col_end = next_byte == -1 and #line_text or next_byte
+
         location_type = 'word'
+      elseif vmode == 'v' and line_start ~= line_end then
+        -- Charwise visual across lines: coerce to line range
+        vim.notify(
+          'gloss: multi-line charwise selection coerced to line range',
+          vim.log.levels.INFO
+        )
+        location_type = 'range'
       elseif line_start == line_end then
         location_type = 'line'
       else
@@ -125,8 +139,8 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     vim.bo[edit_buf].bufhidden = 'wipe'
     vim.bo[edit_buf].swapfile = false
 
-    -- Set a buffer name so :w works
-    vim.api.nvim_buf_set_name(edit_buf, 'gloss://new-annotation')
+    -- Set a unique buffer name so :w works (avoid collisions with concurrent edits)
+    vim.api.nvim_buf_set_name(edit_buf, 'gloss://new-' .. vim.uv.hrtime())
 
     -- On BufWriteCmd, capture content and create annotation
     vim.api.nvim_create_autocmd('BufWriteCmd', {
@@ -180,6 +194,69 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     annotation_mod.delete(bufnr, ann.id)
     store_mod.save(bufnr)
     vim.notify('gloss: annotation deleted', vim.log.levels.INFO)
+  end
+
+  -- :GlossEdit — edit annotation under cursor
+  handlers['GlossEdit'] = function(_opts)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
+
+    local ann = annotation_mod.find_at(bufnr, cursor_line)
+    if not ann then
+      vim.notify('gloss: no annotation at cursor', vim.log.levels.WARN)
+      return
+    end
+
+    -- Open a scratch buffer pre-populated with existing content
+    local source_win = vim.api.nvim_get_current_win()
+    vim.cmd('botright ' .. cfg.edit_height .. 'new')
+    local edit_buf = vim.api.nvim_get_current_buf()
+
+    vim.bo[edit_buf].buftype = 'acwrite'
+    vim.bo[edit_buf].filetype = 'markdown'
+    vim.bo[edit_buf].bufhidden = 'wipe'
+    vim.bo[edit_buf].swapfile = false
+
+    vim.api.nvim_buf_set_name(edit_buf, 'gloss://edit-' .. ann.id)
+
+    -- Pre-populate with existing content
+    local existing_lines = vim.split(ann.content, '\n', { plain = true })
+    vim.api.nvim_buf_set_lines(edit_buf, 0, -1, false, existing_lines)
+    vim.bo[edit_buf].modified = false
+
+    -- Capture annotation ID to avoid closure over mutable ann
+    local ann_id = ann.id
+
+    vim.api.nvim_create_autocmd('BufWriteCmd', {
+      buffer = edit_buf,
+      once = true,
+      callback = function()
+        local lines = vim.api.nvim_buf_get_lines(edit_buf, 0, -1, false)
+        local content = table.concat(lines, '\n')
+        content = content:gsub('%s+$', '')
+
+        if content == '' then
+          vim.notify('gloss: empty content, edit cancelled', vim.log.levels.WARN)
+        else
+          -- Re-find the annotation in case buffer state changed
+          local target = annotation_mod.find_by_id(bufnr, ann_id)
+          if target then
+            annotation_mod.update_content(bufnr, ann_id, content)
+            store_mod.save(bufnr)
+            clear_one(bufnr, target)
+            render_one(bufnr, target)
+            vim.notify('gloss: annotation updated', vim.log.levels.INFO)
+          else
+            vim.notify('gloss: annotation no longer exists', vim.log.levels.ERROR)
+          end
+        end
+
+        vim.api.nvim_buf_delete(edit_buf, { force = true })
+        if vim.api.nvim_win_is_valid(source_win) then
+          vim.api.nvim_set_current_win(source_win)
+        end
+      end,
+    })
   end
 
   -- :GlossExpand — expand annotation under cursor
@@ -304,6 +381,18 @@ function M.unregister()
     pcall(vim.api.nvim_del_user_command, cmd_name)
   end
   handlers = {}
+end
+
+--- Dispatch a command by name with the original opts.
+--- Used by the lazy-load stub to avoid re-dispatch via vim.cmd,
+--- which would lose visual context (visualmode(), marks).
+--- @param cmd_name string
+--- @param opts table
+function M.dispatch(cmd_name, opts)
+  local handler = handlers[cmd_name]
+  if handler then
+    handler(opts)
+  end
 end
 
 return M

@@ -9,12 +9,14 @@ vim.g.loaded_gloss = true
 local commands = {
   'GlossAdd',
   'GlossDelete',
+  'GlossEdit',
   'GlossExpand',
   'GlossCollapse',
   'GlossToggle',
   'GlossNext',
   'GlossPrev',
   'GlossAttach',
+  'GlossList',
 }
 
 for _, cmd in ipairs(commands) do
@@ -27,12 +29,8 @@ for _, cmd in ipairs(commands) do
     -- Load the real plugin (idempotent)
     require('gloss').setup()
 
-    -- Re-dispatch the original command
-    if opts.range == 2 then
-      vim.cmd(string.format('%d,%d%s %s', opts.line1, opts.line2, cmd, opts.args or ''))
-    else
-      vim.cmd(string.format('%s %s', cmd, opts.args or ''))
-    end
+    -- Dispatch directly to preserve visual context (visualmode(), marks)
+    require('gloss.commands').dispatch(cmd, opts)
   end, {
     nargs = '*',
     range = true,
