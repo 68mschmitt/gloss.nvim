@@ -13,20 +13,57 @@ local M = {}
 local active_floats = {}
 
 --- Compute the float position relative to an annotation location.
+--- Accounts for window boundaries to avoid clipping.
 --- @param source_bufnr integer The buffer the annotation references
 --- @param line integer 0-indexed line of the annotation
+--- @param content_height integer Actual content height after wrapping
 --- @param cfg gloss.Config
 --- @return table opts Options table for nvim_open_win
-local function compute_position(source_bufnr, line, cfg)
+local function compute_position(source_bufnr, line, content_height, cfg)
   local win_width = vim.api.nvim_win_get_width(0)
+  local win_height = vim.api.nvim_win_get_height(0)
   local width = math.min(cfg.float_max_width, win_width - 4)
-  local height = math.min(cfg.float_max_height, 10) -- initial; resized after content
+  local height = math.min(content_height, cfg.float_max_height)
+
+  -- Account for sign column / number column offset
+  local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())
+  local textoff = wininfo and wininfo[1] and wininfo[1].textoff or 0
+  local col = textoff
+
+  -- Convert buffer line to window-relative row via screenpos
+  local screen = vim.fn.screenpos(vim.api.nvim_get_current_win(), line + 1, 1)
+  local win_pos = vim.api.nvim_win_get_position(0)
+  local row_in_win
+  if screen and screen.row > 0 then
+    row_in_win = screen.row - win_pos[1] -- window-relative row
+  else
+    -- Fallback: line is off-screen, use cursor's window-relative position
+    row_in_win = vim.fn.winline()
+  end
+
+  -- Determine whether to place above or below the annotation line
+  local anchor = 'NW'
+  local row = row_in_win + 1 -- below the line (1-indexed row + 1 for spacing)
+
+  -- Border adds 2 rows (top + bottom) to effective height
+  local border_rows = 2
+  local effective_height = height + border_rows
+
+  -- If float would clip below the window, try placing above
+  if row + effective_height > win_height then
+    if row_in_win - 1 >= effective_height then
+      -- Enough room above: flip to SW anchor
+      anchor = 'SW'
+      row = row_in_win - 1
+    end
+    -- If neither above nor below fits, keep below (will scroll/clip)
+  end
 
   return {
     relative = 'win',
-    anchor = 'NW',
-    row = line + 1, -- below the annotation line
-    col = 2,
+    anchor = anchor,
+    row = row,
+    col = col,
     width = width,
     height = height,
     border = cfg.float_border,
@@ -97,9 +134,8 @@ function M.open(source_bufnr, annotation_id, content, line, cfg)
   vim.bo[float_buf].bufhidden = 'wipe'
 
   -- Compute float dimensions based on actual content
-  local float_height = math.min(#wrapped, cfg.float_max_height)
-  local opts = compute_position(source_bufnr, line, cfg)
-  opts.height = math.max(float_height, 1)
+  local float_height = math.max(math.min(#wrapped, cfg.float_max_height), 1)
+  local opts = compute_position(source_bufnr, line, float_height, cfg)
   opts.width = width
 
   local winid = vim.api.nvim_open_win(float_buf, false, opts)

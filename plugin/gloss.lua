@@ -21,13 +21,14 @@ local commands = {
 
 for _, cmd in ipairs(commands) do
   vim.api.nvim_create_user_command(cmd, function(opts)
-    -- Remove all stub commands
+    -- Load the real plugin (idempotent) — before removing stubs
+    -- so commands still exist if setup() fails
+    require('gloss').setup()
+
+    -- Remove all stub commands (real handlers are now registered)
     for _, c in ipairs(commands) do
       pcall(vim.api.nvim_del_user_command, c)
     end
-
-    -- Load the real plugin (idempotent)
-    require('gloss').setup()
 
     -- Dispatch directly to preserve visual context (visualmode(), marks)
     require('gloss.commands').dispatch(cmd, opts)

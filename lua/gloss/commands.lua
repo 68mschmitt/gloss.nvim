@@ -104,10 +104,14 @@ function M.register(annotation_mod, store_mod, tracker_mod)
 
         -- Compute exclusive end accounting for multi-byte characters
         local line_text = vim.api.nvim_buf_get_lines(bufnr, line_end, line_end + 1, false)[1] or ''
-        local end_byte = end_pos[3] - 1 -- 0-indexed byte of last selected char
+        local end_byte = math.min(end_pos[3] - 1, #line_text - 1) -- clamp for $-inclusive
         local char_idx = vim.fn.charidx(line_text, end_byte)
-        local next_byte = vim.fn.byteidx(line_text, char_idx + 1)
-        col_end = next_byte == -1 and #line_text or next_byte
+        if char_idx < 0 then
+          col_end = #line_text
+        else
+          local next_byte = vim.fn.byteidx(line_text, char_idx + 1)
+          col_end = next_byte == -1 and #line_text or next_byte
+        end
 
         location_type = 'word'
       elseif vmode == 'v' and line_start ~= line_end then
@@ -217,7 +221,7 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     vim.bo[edit_buf].bufhidden = 'wipe'
     vim.bo[edit_buf].swapfile = false
 
-    vim.api.nvim_buf_set_name(edit_buf, 'gloss://edit-' .. ann.id)
+    vim.api.nvim_buf_set_name(edit_buf, 'gloss://edit-' .. vim.uv.hrtime())
 
     -- Pre-populate with existing content
     local existing_lines = vim.split(ann.content, '\n', { plain = true })
