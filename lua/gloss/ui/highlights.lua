@@ -8,12 +8,13 @@ function M.setup()
   -- Sign column icon highlight
   vim.api.nvim_set_hl(0, 'GlossSign', { default = true, fg = '#7aa2f7', bold = true })
   -- Subtle underline for referenced text in collapsed state
-  vim.api.nvim_set_hl(0, 'GlossHighlight', { default = true, underline = true, sp = '#565f89' })
+  vim.api.nvim_set_hl(0, 'GlossHighlight', { default = true, underline = true, sp = '#FFFF00' })
   -- Highlight for referenced text when annotation is expanded
+  -- Uses a subtle background tint + bold underline for clear visual distinction
   vim.api.nvim_set_hl(
     0,
     'GlossHighlightActive',
-    { default = true, underline = true, sp = '#7aa2f7' }
+    { default = true, underline = true, sp = '#7aa2f7', bg = '#1a1b2e' }
   )
 end
 

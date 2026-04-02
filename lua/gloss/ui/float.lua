@@ -12,21 +12,41 @@ local M = {}
 --- @type table<integer, gloss.FloatState[]>
 local active_floats = {}
 
+--- Find the longest visible line in the annotation's line range.
+--- Used to determine if there's room to place a float to the right.
+--- @param source_bufnr integer
+--- @param line_start integer 0-indexed
+--- @param line_end integer 0-indexed
+--- @return integer max display width of lines in the range
+local function longest_line_in_range(source_bufnr, line_start, line_end)
+  local lines = vim.api.nvim_buf_get_lines(source_bufnr, line_start, line_end + 1, false)
+  local max_width = 0
+  for _, l in ipairs(lines) do
+    local w = vim.fn.strdisplaywidth(l)
+    if w > max_width then
+      max_width = w
+    end
+  end
+  return max_width
+end
+
 --- Compute the float position relative to an annotation location.
---- Accounts for window boundaries to avoid clipping.
+--- Prefers right-side placement (inline with annotation) when there is room,
+--- falling back to below/above the annotation line.
 --- @param source_bufnr integer The buffer the annotation references
 --- @param line integer 0-indexed line of the annotation
 --- @param content_height integer Actual content height after wrapping
+--- @param content_width integer Width of the float content area
 --- @param cfg gloss.Config
 --- @return table opts Options table for nvim_open_win
-local function compute_position(source_bufnr, line, content_height, cfg)
+local function compute_position(source_bufnr, line, content_height, content_width, cfg)
+  local win_width = vim.api.nvim_win_get_width(0)
   local win_height = vim.api.nvim_win_get_height(0)
   local height = math.min(content_height, cfg.float_max_height)
 
   -- Account for sign column / number column offset
   local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())
   local textoff = wininfo and wininfo[1] and wininfo[1].textoff or 0
-  local col = textoff
 
   -- Convert buffer line to window-relative row via screenpos
   local screen = vim.fn.screenpos(vim.api.nvim_get_current_win(), line + 1, 1)
@@ -39,12 +59,38 @@ local function compute_position(source_bufnr, line, content_height, cfg)
     row_in_win = vim.fn.winline()
   end
 
-  -- Determine whether to place above or below the annotation line
-  local anchor = 'NW'
-  local row = row_in_win + 1 -- below the line (1-indexed row + 1 for spacing)
-
-  -- Border adds 2 rows (top + bottom) to effective height
+  -- Border adds 2 cols/rows to effective dimensions
+  local border_cols = 2
   local border_rows = 2
+
+  -- Try right-side placement: float anchored to the right of source text,
+  -- top-aligned with the annotation's start line.
+  local source_width = longest_line_in_range(source_bufnr, line, line)
+  local right_col = textoff + source_width + 2 -- 2 chars padding
+  local available_right = win_width - right_col - border_cols
+  local min_float_width = 30 -- don't show a float narrower than this
+
+  if available_right >= min_float_width then
+    -- Right-side placement fits. Clamp float width to available space.
+    local right_width = math.min(content_width, available_right)
+    return {
+      relative = 'win',
+      anchor = 'NW',
+      row = row_in_win - 1, -- align top of float with the annotation line
+      col = right_col,
+      width = right_width,
+      height = height,
+      border = cfg.float_border,
+      style = 'minimal',
+      focusable = true,
+    }
+  end
+
+  -- Fallback: below / above placement (original behaviour)
+  local col = textoff
+  local anchor = 'NW'
+  local row = row_in_win + 1 -- below the line
+
   local effective_height = height + border_rows
 
   -- If float would clip below the window, try placing above
@@ -141,14 +187,51 @@ local function wrap_lines(lines, width)
   return result
 end
 
+--- Build a float title from the annotated source text.
+--- Returns a short, truncated snippet of the referenced text for context.
+--- @param source_bufnr integer
+--- @param line_start integer 0-indexed
+--- @param line_end integer 0-indexed
+--- @param col_start integer|nil
+--- @param col_end integer|nil
+--- @return string title
+local function build_title(source_bufnr, line_start, line_end, col_start, col_end)
+  local lines = vim.api.nvim_buf_get_lines(source_bufnr, line_start, line_end + 1, false)
+  if #lines == 0 then
+    return string.format(' L%d ', line_start + 1)
+  end
+
+  local snippet
+  if col_start and col_end and #lines == 1 then
+    -- Word-level: extract the selected range
+    snippet = lines[1]:sub(col_start + 1, col_end)
+  else
+    -- Line/range: use the first line, trimmed
+    snippet = vim.trim(lines[1])
+  end
+
+  -- Truncate to keep the title readable
+  local max_len = 40
+  if #snippet > max_len then
+    snippet = snippet:sub(1, max_len - 3) .. '...'
+  end
+
+  if line_start == line_end then
+    return string.format(' L%d: %s ', line_start + 1, snippet)
+  else
+    return string.format(' L%d-%d: %s ', line_start + 1, line_end + 1, snippet)
+  end
+end
+
 --- Open a floating window to display annotation content.
 --- @param source_bufnr integer Buffer the annotation belongs to
 --- @param annotation_id string Annotation id
 --- @param content string Markdown content
 --- @param line integer 0-indexed line of the annotation
 --- @param cfg gloss.Config
+--- @param ann_meta? {line_end: integer, col_start: integer|nil, col_end: integer|nil} Extra annotation fields for title
 --- @return integer|nil winid The window id, or nil on failure
-function M.open(source_bufnr, annotation_id, content, line, cfg)
+function M.open(source_bufnr, annotation_id, content, line, cfg, ann_meta)
   -- Close any existing float for this annotation
   M.close_by_annotation(source_bufnr, annotation_id)
 
@@ -171,8 +254,31 @@ function M.open(source_bufnr, annotation_id, content, line, cfg)
 
   -- Compute float dimensions based on actual content
   local float_height = math.max(math.min(#wrapped, cfg.float_max_height), 1)
-  local opts = compute_position(source_bufnr, line, float_height, cfg)
-  opts.width = width
+  local opts = compute_position(source_bufnr, line, float_height, width, cfg)
+
+  -- If compute_position already set width (right-side placement), re-wrap
+  -- content to the narrower width for a clean fit.
+  if opts.width and opts.width < width then
+    width = opts.width
+    wrapped = wrap_lines(vim.split(content, '\n', { plain = true }), width)
+    vim.bo[float_buf].modifiable = true
+    vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, wrapped)
+    vim.bo[float_buf].modifiable = false
+    float_height = math.max(math.min(#wrapped, cfg.float_max_height), 1)
+    opts.height = float_height
+  end
+
+  -- Set width if not already determined by right-side placement
+  if not opts.width then
+    opts.width = width
+  end
+
+  -- Add title with source context
+  local line_end = ann_meta and ann_meta.line_end or line
+  local col_start = ann_meta and ann_meta.col_start or nil
+  local col_end = ann_meta and ann_meta.col_end or nil
+  opts.title = build_title(source_bufnr, line, line_end, col_start, col_end)
+  opts.title_pos = 'left'
 
   local winid = vim.api.nvim_open_win(float_buf, false, opts)
   if not winid or winid == 0 then

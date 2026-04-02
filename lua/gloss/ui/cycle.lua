@@ -62,7 +62,11 @@ local function show_focused(bufnr, annotations, focus_idx, annotation_mod, cfg, 
     if i == focus_idx then
       -- Expand the focused one
       annotation_mod.set_collapsed(bufnr, ann.id, false)
-      float.open(bufnr, ann.id, ann.content, ann.line_start, cfg)
+      float.open(bufnr, ann.id, ann.content, ann.line_start, cfg, {
+        line_end = ann.line_end,
+        col_start = ann.col_start,
+        col_end = ann.col_end,
+      })
       highlights.apply(bufnr, ns_id, ann.line_start, ann.line_end, ann.col_start, ann.col_end, true)
     else
       -- Collapse all others

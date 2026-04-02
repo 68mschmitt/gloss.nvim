@@ -39,7 +39,11 @@ function M.register(annotation_mod, store_mod, tracker_mod)
 
     -- Show float if expanded
     if not ann.collapsed then
-      float.open(bufnr, ann.id, ann.content, ann.line_start, cfg)
+      float.open(bufnr, ann.id, ann.content, ann.line_start, cfg, {
+        line_end = ann.line_end,
+        col_start = ann.col_start,
+        col_end = ann.col_end,
+      })
     end
   end
 
