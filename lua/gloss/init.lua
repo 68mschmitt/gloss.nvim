@@ -51,25 +51,9 @@ function M.setup(opts)
       if store.has_gloss_file(filepath) then
         store.load(bufnr, filepath)
         tracker.reconcile(bufnr, annotation)
-        -- Render signs and highlights for loaded annotations
-        local ns_id = vim.api.nvim_create_namespace('gloss')
-        local signs = require('gloss.ui.signs')
-        local hl = require('gloss.ui.highlights')
-        local annotations = annotation.list(bufnr)
-        if annotations then
-          for _, ann in ipairs(annotations) do
-            signs.place(bufnr, ns_id, ann.line_start, cfg.sign_text, cfg.sign_hl)
-            hl.apply(
-              bufnr,
-              ns_id,
-              ann.line_start,
-              ann.line_end,
-              ann.col_start,
-              ann.col_end,
-              not ann.collapsed
-            )
-          end
-        end
+        -- Render via commands.render_buffer so extmark IDs are tracked
+        -- (enables targeted clear_one for delete/expand/collapse)
+        commands.render_buffer(bufnr)
       end
     end,
   })

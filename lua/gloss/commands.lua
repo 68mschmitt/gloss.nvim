@@ -17,7 +17,48 @@ function M.register(annotation_mod, store_mod, tracker_mod)
   local highlights = require('gloss.ui.highlights')
   local ns_id = vim.api.nvim_create_namespace('gloss')
 
-  --- Render all non-collapsed annotations for a buffer.
+  --- Render a single annotation (sign + highlight + float if expanded).
+  --- Stores rendering extmark IDs on the annotation for targeted cleanup.
+  --- @param bufnr integer
+  --- @param ann gloss.Annotation
+  local function render_one(bufnr, ann)
+    -- Place sign on the first line
+    ann._sign_extmark = signs.place(bufnr, ns_id, ann.line_start, cfg.sign_text, cfg.sign_hl)
+
+    -- Apply highlight to referenced text
+    local active = not ann.collapsed
+    ann._hl_extmark = highlights.apply(
+      bufnr,
+      ns_id,
+      ann.line_start,
+      ann.line_end,
+      ann.col_start,
+      ann.col_end,
+      active
+    )
+
+    -- Show float if expanded
+    if not ann.collapsed then
+      float.open(bufnr, ann.id, ann.content, ann.line_start, cfg)
+    end
+  end
+
+  --- Clear rendering for a single annotation.
+  --- @param bufnr integer
+  --- @param ann gloss.Annotation
+  local function clear_one(bufnr, ann)
+    if ann._sign_extmark then
+      pcall(vim.api.nvim_buf_del_extmark, bufnr, ns_id, ann._sign_extmark)
+      ann._sign_extmark = nil
+    end
+    if ann._hl_extmark then
+      pcall(vim.api.nvim_buf_del_extmark, bufnr, ns_id, ann._hl_extmark)
+      ann._hl_extmark = nil
+    end
+    float.close_by_annotation(bufnr, ann.id)
+  end
+
+  --- Render all annotations for a buffer.
   --- @param bufnr integer
   local function render_buffer(bufnr)
     local annotations = annotation_mod.list(bufnr)
@@ -26,29 +67,15 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     end
 
     for _, ann in ipairs(annotations) do
-      -- Place sign on the first line
-      signs.place(bufnr, ns_id, ann.line_start, cfg.sign_text, cfg.sign_hl)
-
-      -- Apply highlight to referenced text
-      local active = not ann.collapsed
-      highlights.apply(
-        bufnr,
-        ns_id,
-        ann.line_start,
-        ann.line_end,
-        ann.col_start,
-        ann.col_end,
-        active
-      )
-
-      -- Show float if expanded
-      if not ann.collapsed then
-        float.open(bufnr, ann.id, ann.content, ann.line_start, cfg)
-      end
+      render_one(bufnr, ann)
     end
   end
 
-  --- Re-render: clear everything and redraw.
+  -- Expose render_buffer for use by init.lua (BufReadPost)
+  M.render_buffer = render_buffer
+
+  --- Full re-render: clear everything and redraw.
+  --- Used for bulk operations (toggle all, attach).
   --- @param bufnr integer
   local function rerender(bufnr)
     float.close_all(bufnr)
@@ -107,7 +134,7 @@ function M.register(annotation_mod, store_mod, tracker_mod)
         if content == '' then
           vim.notify('gloss: empty annotation, cancelled', vim.log.levels.WARN)
         else
-          annotation_mod.create(bufnr, {
+          local ann = annotation_mod.create(bufnr, {
             content = content,
             location_type = location_type,
             line_start = line_start,
@@ -116,7 +143,7 @@ function M.register(annotation_mod, store_mod, tracker_mod)
             col_end = col_end,
           })
           store_mod.save(bufnr)
-          rerender(bufnr)
+          render_one(bufnr, ann)
           vim.notify('gloss: annotation added', vim.log.levels.INFO)
         end
 
@@ -140,9 +167,10 @@ function M.register(annotation_mod, store_mod, tracker_mod)
       return
     end
 
+    -- Clear rendering before deleting the annotation data
+    clear_one(bufnr, ann)
     annotation_mod.delete(bufnr, ann.id)
     store_mod.save(bufnr)
-    rerender(bufnr)
     vim.notify('gloss: annotation deleted', vim.log.levels.INFO)
   end
 
@@ -158,7 +186,8 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     end
 
     annotation_mod.set_collapsed(bufnr, ann.id, false)
-    rerender(bufnr)
+    clear_one(bufnr, ann)
+    render_one(bufnr, ann)
   end
 
   -- :GlossCollapse — collapse annotation under cursor
@@ -173,7 +202,8 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     end
 
     annotation_mod.set_collapsed(bufnr, ann.id, true)
-    rerender(bufnr)
+    clear_one(bufnr, ann)
+    render_one(bufnr, ann)
   end
 
   -- :GlossToggle — toggle all annotations in buffer
