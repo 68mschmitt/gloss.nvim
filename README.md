@@ -18,8 +18,8 @@ No external dependencies.
 {
   "68mschmitt/gloss.nvim",
   cmd = {
-    "GlossAdd", "GlossDelete", "GlossExpand", "GlossCollapse",
-    "GlossToggle", "GlossNext", "GlossPrev", "GlossAttach",
+    "GlossAdd", "GlossDelete", "GlossToggle", "GlossToggleAll",
+    "GlossNext", "GlossPrev", "GlossAttach",
   },
   opts = {},
 }
@@ -45,19 +45,19 @@ Then add `require("gloss").setup()` to your config.
 
 Select text (or place your cursor on a line), run `:GlossAdd`, write
 markdown in the scratch buffer that opens, and `:w` to save. A sign
-appears in the gutter. `:GlossExpand` shows the annotation in a float.
-`:GlossToggle` hides or shows all annotations in the buffer.
+appears in the gutter. `:GlossToggle` expands or collapses the
+annotation under the cursor. `:GlossToggleAll` hides or shows all
+annotations in the buffer.
 
-| Command          | Description                                |
-|------------------|--------------------------------------------|
-| `:GlossAdd`      | Add annotation at cursor or visual selection |
-| `:GlossDelete`   | Delete annotation under cursor             |
-| `:GlossExpand`   | Show annotation float under cursor         |
-| `:GlossCollapse` | Hide annotation float under cursor         |
-| `:GlossToggle`   | Toggle all annotations in current buffer   |
-| `:GlossNext`     | Cycle to next overlapping annotation       |
-| `:GlossPrev`     | Cycle to previous overlapping annotation   |
-| `:GlossAttach`   | Attach a gloss file to the current buffer  |
+| Command           | Description                                |
+|-------------------|--------------------------------------------|
+| `:GlossAdd`       | Add annotation at cursor or visual selection |
+| `:GlossDelete`    | Delete annotation under cursor             |
+| `:GlossToggle`    | Toggle annotation under cursor             |
+| `:GlossToggleAll` | Toggle all annotations in current buffer   |
+| `:GlossNext`      | Cycle to next overlapping annotation       |
+| `:GlossPrev`      | Cycle to previous overlapping annotation   |
+| `:GlossAttach`    | Attach a gloss file to the current buffer  |
 
 ### Suggested keymaps
 
@@ -66,9 +66,8 @@ The plugin does not define default keybindings. Map them however you want:
 ```lua
 vim.keymap.set({ "n", "v" }, "<leader>ga", "<cmd>GlossAdd<cr>", { desc = "Add gloss" })
 vim.keymap.set("n", "<leader>gd", "<cmd>GlossDelete<cr>", { desc = "Delete gloss" })
-vim.keymap.set("n", "<leader>ge", "<cmd>GlossExpand<cr>", { desc = "Expand gloss" })
-vim.keymap.set("n", "<leader>gc", "<cmd>GlossCollapse<cr>", { desc = "Collapse gloss" })
-vim.keymap.set("n", "<leader>gt", "<cmd>GlossToggle<cr>", { desc = "Toggle glosses" })
+vim.keymap.set("n", "<leader>gt", "<cmd>GlossToggle<cr>", { desc = "Toggle gloss" })
+vim.keymap.set("n", "<leader>gT", "<cmd>GlossToggleAll<cr>", { desc = "Toggle all glosses" })
 vim.keymap.set("n", "<leader>gn", "<cmd>GlossNext<cr>", { desc = "Next gloss" })
 vim.keymap.set("n", "<leader>gp", "<cmd>GlossPrev<cr>", { desc = "Previous gloss" })
 ```

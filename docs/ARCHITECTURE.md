@@ -54,9 +54,8 @@ gloss.nvim/
 - Maps user-facing commands to core operations:
   - `:GlossAdd` — add annotation at current location
   - `:GlossDelete` — delete annotation under cursor
-  - `:GlossExpand` — expand annotation under cursor
-  - `:GlossCollapse` — collapse annotation under cursor
-  - `:GlossToggle` — toggle all annotations in current buffer
+  - `:GlossToggle` — toggle annotation under cursor
+  - `:GlossToggleAll` — toggle all annotations in current buffer
   - `:GlossNext` / `:GlossPrev` — cycle overlapping annotations
   - `:GlossAttach` — open selection menu to attach a gloss file
 

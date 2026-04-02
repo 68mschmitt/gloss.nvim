@@ -267,40 +267,24 @@ function M.register(annotation_mod, store_mod, tracker_mod)
     })
   end
 
-  -- :GlossExpand — expand annotation under cursor
-  handlers['GlossExpand'] = function(_opts)
-    local bufnr = vim.api.nvim_get_current_buf()
-    local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
-
-    local ann = annotation_mod.find_at(bufnr, cursor_line)
-    if not ann then
-      vim.notify('gloss: no annotation at cursor', vim.log.levels.WARN)
-      return
-    end
-
-    annotation_mod.set_collapsed(bufnr, ann.id, false)
-    clear_one(bufnr, ann)
-    render_one(bufnr, ann)
-  end
-
-  -- :GlossCollapse — collapse annotation under cursor
-  handlers['GlossCollapse'] = function(_opts)
-    local bufnr = vim.api.nvim_get_current_buf()
-    local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
-
-    local ann = annotation_mod.find_at(bufnr, cursor_line)
-    if not ann then
-      vim.notify('gloss: no annotation at cursor', vim.log.levels.WARN)
-      return
-    end
-
-    annotation_mod.set_collapsed(bufnr, ann.id, true)
-    clear_one(bufnr, ann)
-    render_one(bufnr, ann)
-  end
-
-  -- :GlossToggle — toggle all annotations in buffer
+  -- :GlossToggle — toggle annotation under cursor
   handlers['GlossToggle'] = function(_opts)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
+
+    local ann = annotation_mod.find_at(bufnr, cursor_line)
+    if not ann then
+      vim.notify('gloss: no annotation at cursor', vim.log.levels.WARN)
+      return
+    end
+
+    annotation_mod.set_collapsed(bufnr, ann.id, not ann.collapsed)
+    clear_one(bufnr, ann)
+    render_one(bufnr, ann)
+  end
+
+  -- :GlossToggleAll — toggle all annotations in buffer
+  handlers['GlossToggleAll'] = function(_opts)
     local bufnr = vim.api.nvim_get_current_buf()
     local annotations = annotation_mod.list(bufnr)
     if not annotations or #annotations == 0 then

@@ -27,9 +27,8 @@ The user can:
   - A word or words on a line in a buffer
   - A range of lines in a buffer
 - **Delete** an annotation
-- **Collapse** an annotation (hide the floating content, keep the gutter icon)
-- **Expand** an annotation (show the floating content)
-- **Toggle** all annotations for a buffer (hide/show)
+- **Toggle** an annotation (expand or collapse the floating content)
+- **Toggle all** annotations for a buffer (hide/show)
 - **Attach** a gloss file to any buffer via a selection menu
 - **Cycle** between overlapping annotations when multiple exist at or near
   the same screen position
