@@ -74,7 +74,13 @@ function M.create(bufnr, params)
     line_end = params.line_end,
     col_start = params.col_start,
     col_end = params.col_end,
-    content_hash = M.compute_hash(bufnr, params.line_start, params.line_end, params.col_start, params.col_end),
+    content_hash = M.compute_hash(
+      bufnr,
+      params.line_start,
+      params.line_end,
+      params.col_start,
+      params.col_end
+    ),
     collapsed = true, -- start collapsed
     created_at = os.date('!%Y-%m-%dT%H:%M:%SZ'),
     extmark_id = nil,

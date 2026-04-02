@@ -16,7 +16,7 @@ No external dependencies.
 
 ```lua
 {
-  "your-handle/gloss.nvim",
+  "68mschmitt/gloss.nvim",
   cmd = {
     "GlossAdd", "GlossDelete", "GlossExpand", "GlossCollapse",
     "GlossToggle", "GlossNext", "GlossPrev", "GlossAttach",
@@ -28,14 +28,14 @@ No external dependencies.
 ### mini.deps
 
 ```lua
-MiniDeps.add({ source = "your-handle/gloss.nvim" })
+MiniDeps.add({ source = "68mschmitt/gloss.nvim" })
 require("gloss").setup()
 ```
 
 ### Manual
 
 ```bash
-git clone https://github.com/your-handle/gloss.nvim \
+git clone https://github.com/68mschmitt/gloss.nvim \
   ~/.local/share/nvim/site/pack/plugins/start/gloss.nvim
 ```
 

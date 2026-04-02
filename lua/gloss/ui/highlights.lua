@@ -10,7 +10,11 @@ function M.setup()
   -- Subtle underline for referenced text in collapsed state
   vim.api.nvim_set_hl(0, 'GlossHighlight', { default = true, underline = true, sp = '#565f89' })
   -- Highlight for referenced text when annotation is expanded
-  vim.api.nvim_set_hl(0, 'GlossHighlightActive', { default = true, underline = true, sp = '#7aa2f7' })
+  vim.api.nvim_set_hl(
+    0,
+    'GlossHighlightActive',
+    { default = true, underline = true, sp = '#7aa2f7' }
+  )
 end
 
 --- Apply highlight to a location in a buffer.

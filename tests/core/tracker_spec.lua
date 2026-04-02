@@ -108,7 +108,10 @@ T['setup']['place_extmarks() sets extmark ids on annotations'] = function()
   local buf = make_buffer({ 'line one', 'line two' })
 
   annotation.create(buf, { content = 'test', location_type = 'line', line_start = 0, line_end = 0 })
-  annotation.create(buf, { content = 'test2', location_type = 'line', line_start = 1, line_end = 1 })
+  annotation.create(
+    buf,
+    { content = 'test2', location_type = 'line', line_start = 1, line_end = 1 }
+  )
 
   tracker.place_extmarks(buf, annotation)
 
@@ -125,7 +128,10 @@ end
 T['setup']['sync_from_extmarks() updates positions from extmarks'] = function()
   local buf = make_buffer({ 'alpha', 'beta', 'gamma' })
 
-  annotation.create(buf, { content = 'track me', location_type = 'line', line_start = 1, line_end = 1 })
+  annotation.create(
+    buf,
+    { content = 'track me', location_type = 'line', line_start = 1, line_end = 1 }
+  )
 
   tracker.place_extmarks(buf, annotation)
 

@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        nvim-version: ['v0.12.0']
+        nvim-version: ['stable', 'nightly']
     steps:
       - uses: actions/checkout@v4
 

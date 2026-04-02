@@ -52,8 +52,14 @@ end
 T['setup']['list() returns all annotations for a buffer'] = function()
   local buf = make_buffer({ 'line one', 'line two' })
 
-  annotation.create(buf, { content = 'first', location_type = 'line', line_start = 0, line_end = 0 })
-  annotation.create(buf, { content = 'second', location_type = 'line', line_start = 1, line_end = 1 })
+  annotation.create(
+    buf,
+    { content = 'first', location_type = 'line', line_start = 0, line_end = 0 }
+  )
+  annotation.create(
+    buf,
+    { content = 'second', location_type = 'line', line_start = 1, line_end = 1 }
+  )
 
   local list = annotation.list(buf)
   expect.equality(#list, 2)
@@ -67,7 +73,10 @@ end
 T['setup']['find_at() returns annotation at given line'] = function()
   local buf = make_buffer({ 'line one', 'line two', 'line three' })
 
-  annotation.create(buf, { content = 'on line 1', location_type = 'line', line_start = 1, line_end = 1 })
+  annotation.create(
+    buf,
+    { content = 'on line 1', location_type = 'line', line_start = 1, line_end = 1 }
+  )
 
   local found = annotation.find_at(buf, 1)
   expect.equality(found.content, 'on line 1')
@@ -82,7 +91,10 @@ end
 T['setup']['find_at() matches range annotations'] = function()
   local buf = make_buffer({ 'line one', 'line two', 'line three', 'line four' })
 
-  annotation.create(buf, { content = 'range note', location_type = 'range', line_start = 1, line_end = 2 })
+  annotation.create(
+    buf,
+    { content = 'range note', location_type = 'range', line_start = 1, line_end = 2 }
+  )
 
   -- Should find annotation at both lines in the range
   expect.equality(annotation.find_at(buf, 1).content, 'range note')
@@ -98,8 +110,14 @@ end
 T['setup']['find_all_at() returns multiple annotations at same line'] = function()
   local buf = make_buffer({ 'line one' })
 
-  annotation.create(buf, { content = 'first', location_type = 'line', line_start = 0, line_end = 0 })
-  annotation.create(buf, { content = 'second', location_type = 'line', line_start = 0, line_end = 0 })
+  annotation.create(
+    buf,
+    { content = 'first', location_type = 'line', line_start = 0, line_end = 0 }
+  )
+  annotation.create(
+    buf,
+    { content = 'second', location_type = 'line', line_start = 0, line_end = 0 }
+  )
 
   local all = annotation.find_all_at(buf, 0)
   expect.equality(#all, 2)
@@ -111,7 +129,10 @@ end
 T['setup']['delete() removes annotation by id'] = function()
   local buf = make_buffer({ 'line one' })
 
-  local ann = annotation.create(buf, { content = 'to delete', location_type = 'line', line_start = 0, line_end = 0 })
+  local ann = annotation.create(
+    buf,
+    { content = 'to delete', location_type = 'line', line_start = 0, line_end = 0 }
+  )
 
   expect.equality(#annotation.list(buf), 1)
 
@@ -130,7 +151,10 @@ end
 T['setup']['set_collapsed() toggles collapse state'] = function()
   local buf = make_buffer({ 'line one' })
 
-  local ann = annotation.create(buf, { content = 'toggle me', location_type = 'line', line_start = 0, line_end = 0 })
+  local ann = annotation.create(
+    buf,
+    { content = 'toggle me', location_type = 'line', line_start = 0, line_end = 0 }
+  )
   expect.equality(ann.collapsed, true)
 
   annotation.set_collapsed(buf, ann.id, false)
@@ -162,8 +186,10 @@ end
 T['setup']['serialize() strips runtime fields'] = function()
   local buf = make_buffer({ 'line one' })
 
-  local ann =
-    annotation.create(buf, { content = 'serialize me', location_type = 'line', line_start = 0, line_end = 0 })
+  local ann = annotation.create(
+    buf,
+    { content = 'serialize me', location_type = 'line', line_start = 0, line_end = 0 }
+  )
   ann.extmark_id = 42 -- simulate runtime field
 
   local serialized = annotation.serialize(buf)
@@ -178,7 +204,10 @@ end
 T['setup']['update_position() modifies line positions'] = function()
   local buf = make_buffer({ 'a', 'b', 'c', 'd' })
 
-  local ann = annotation.create(buf, { content = 'movable', location_type = 'line', line_start = 0, line_end = 0 })
+  local ann = annotation.create(
+    buf,
+    { content = 'movable', location_type = 'line', line_start = 0, line_end = 0 }
+  )
 
   annotation.update_position(buf, ann.id, 2, 2)
   local found = annotation.find_by_id(buf, ann.id)

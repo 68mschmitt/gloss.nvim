@@ -201,7 +201,7 @@ function M.scroll(source_bufnr, annotation_id, delta)
   for _, f in ipairs(floats) do
     if f.annotation_id == annotation_id and f.winid and vim.api.nvim_win_is_valid(f.winid) then
       vim.api.nvim_win_call(f.winid, function()
-        local cmd = delta > 0 and (delta .. [[\<C-e>]]) or ((-delta) .. [[\<C-y>]])
+        local cmd = delta > 0 and (delta .. [[\<C-e>]]) or (-delta .. [[\<C-y>]])
         vim.cmd('normal! ' .. vim.api.nvim_replace_termcodes(cmd, true, false, true))
       end)
       break

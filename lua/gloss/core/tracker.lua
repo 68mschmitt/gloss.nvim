@@ -56,7 +56,8 @@ function M.reconcile(bufnr, annotation_mod)
     local stored_end = math.min(stored_line + line_delta, line_count - 1)
 
     -- Fast path: check stored line
-    local current_hash = annotation_mod.compute_hash(bufnr, stored_line, stored_end, ann.col_start, ann.col_end)
+    local current_hash =
+      annotation_mod.compute_hash(bufnr, stored_line, stored_end, ann.col_start, ann.col_end)
     if current_hash == ann.content_hash then
       -- Position is correct, just clamp
       ann.line_start = stored_line
@@ -71,7 +72,8 @@ function M.reconcile(bufnr, annotation_mod)
         local check_line = stored_line - offset
         if check_line >= 0 then
           local check_end = math.min(check_line + line_delta, line_count - 1)
-          local h = annotation_mod.compute_hash(bufnr, check_line, check_end, ann.col_start, ann.col_end)
+          local h =
+            annotation_mod.compute_hash(bufnr, check_line, check_end, ann.col_start, ann.col_end)
           if h == ann.content_hash then
             ann.line_start = check_line
             ann.line_end = check_end
@@ -84,7 +86,8 @@ function M.reconcile(bufnr, annotation_mod)
         check_line = stored_line + offset
         if check_line < line_count then
           local check_end = math.min(check_line + line_delta, line_count - 1)
-          local h = annotation_mod.compute_hash(bufnr, check_line, check_end, ann.col_start, ann.col_end)
+          local h =
+            annotation_mod.compute_hash(bufnr, check_line, check_end, ann.col_start, ann.col_end)
           if h == ann.content_hash then
             ann.line_start = check_line
             ann.line_end = check_end
@@ -129,8 +132,13 @@ function M.sync_from_extmarks(bufnr, annotation_mod)
         ann.line_end = new_line + line_delta
 
         -- Update content hash at new position
-        ann.content_hash =
-          annotation_mod.compute_hash(bufnr, ann.line_start, ann.line_end, ann.col_start, ann.col_end)
+        ann.content_hash = annotation_mod.compute_hash(
+          bufnr,
+          ann.line_start,
+          ann.line_end,
+          ann.col_start,
+          ann.col_end
+        )
       end
     end
   end

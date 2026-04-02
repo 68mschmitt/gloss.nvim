@@ -62,7 +62,15 @@ function M.setup(opts)
         if annotations then
           for _, ann in ipairs(annotations) do
             signs.place(bufnr, ns_id, ann.line_start, cfg.sign_text, cfg.sign_hl)
-            hl.apply(bufnr, ns_id, ann.line_start, ann.line_end, ann.col_start, ann.col_end, not ann.collapsed)
+            hl.apply(
+              bufnr,
+              ns_id,
+              ann.line_start,
+              ann.line_end,
+              ann.col_start,
+              ann.col_end,
+              not ann.collapsed
+            )
           end
         end
       end

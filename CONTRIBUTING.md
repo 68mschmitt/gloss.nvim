@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-git clone https://github.com/your-handle/gloss.nvim.git
+git clone https://github.com/68mschmitt/gloss.nvim.git
 cd gloss.nvim
 make test      # runs mini.test suite
 make lint      # runs StyLua check

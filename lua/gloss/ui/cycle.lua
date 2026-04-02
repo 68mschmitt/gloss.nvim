@@ -68,7 +68,15 @@ local function show_focused(bufnr, annotations, focus_idx, annotation_mod, cfg, 
       -- Collapse all others
       annotation_mod.set_collapsed(bufnr, ann.id, true)
       float.close_by_annotation(bufnr, ann.id)
-      highlights.apply(bufnr, ns_id, ann.line_start, ann.line_end, ann.col_start, ann.col_end, false)
+      highlights.apply(
+        bufnr,
+        ns_id,
+        ann.line_start,
+        ann.line_end,
+        ann.col_start,
+        ann.col_end,
+        false
+      )
     end
 
     -- Sign is always present

@@ -31,7 +31,15 @@ function M.register(annotation_mod, store_mod, tracker_mod)
 
       -- Apply highlight to referenced text
       local active = not ann.collapsed
-      highlights.apply(bufnr, ns_id, ann.line_start, ann.line_end, ann.col_start, ann.col_end, active)
+      highlights.apply(
+        bufnr,
+        ns_id,
+        ann.line_start,
+        ann.line_end,
+        ann.col_start,
+        ann.col_end,
+        active
+      )
 
       -- Show float if expanded
       if not ann.collapsed then
