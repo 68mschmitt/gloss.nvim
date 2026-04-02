@@ -3,7 +3,7 @@
 
 local M = {}
 
-local ns_id = vim.api.nvim_create_namespace('gloss_tracker')
+local ns_id = require('gloss.config').ns.tracker
 
 --- Place extmarks for all annotations in a buffer.
 --- Called after loading/reconciling to track positions during editing.

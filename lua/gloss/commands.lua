@@ -15,7 +15,7 @@ function M.register(annotation_mod, store_mod, tracker_mod)
   local float = require('gloss.ui.float')
   local signs = require('gloss.ui.signs')
   local highlights = require('gloss.ui.highlights')
-  local ns_id = vim.api.nvim_create_namespace('gloss')
+  local ns_id = require('gloss.config').ns.gloss
 
   --- Render a single annotation (sign + highlight + float if expanded).
   --- Stores rendering extmark IDs on the annotation for targeted cleanup.

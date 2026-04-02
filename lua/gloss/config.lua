@@ -1,7 +1,17 @@
 --- Configuration for gloss.nvim
---- Defines defaults and merges user-provided options.
+--- Defines defaults, constants, and merges user-provided options.
 
 local M = {}
+
+--- Namespace IDs used across the plugin.
+--- Defined here so all modules reference the same names.
+--- @type table<string, integer>
+M.ns = {
+  --- Namespace for signs and highlights (UI rendering)
+  gloss = vim.api.nvim_create_namespace('gloss'),
+  --- Namespace for position-tracking extmarks
+  tracker = vim.api.nvim_create_namespace('gloss_tracker'),
+}
 
 --- @class gloss.Config
 --- @field state_dir string Directory for gloss files and index

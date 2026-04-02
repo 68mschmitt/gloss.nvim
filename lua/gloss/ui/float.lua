@@ -62,7 +62,7 @@ local function compute_position(source_bufnr, line, content_height, cfg)
     anchor = anchor,
     row = row,
     col = col,
-    width = width,
+    -- width is set by M.open() after calling compute_position
     height = height,
     border = cfg.float_border,
     style = 'minimal',
@@ -93,7 +93,7 @@ local function wrap_lines(lines, width)
     else
       -- Word-wrap using display widths and character-safe slicing
       local chars = {}
-      for _, c in vim.fn.str2list(line, true) do
+      for _, c in ipairs(vim.fn.str2list(line, true)) do
         table.insert(chars, vim.fn.nr2char(c))
       end
 
@@ -114,7 +114,7 @@ local function wrap_lines(lines, width)
             local remainder = seg:sub(last_space + 1)
             current = {}
             current_width = 0
-            for _, rc in vim.fn.str2list(remainder, true) do
+            for _, rc in ipairs(vim.fn.str2list(remainder, true)) do
               local rch = vim.fn.nr2char(rc)
               table.insert(current, rch)
               current_width = current_width + vim.fn.strdisplaywidth(rch)
