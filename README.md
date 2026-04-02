@@ -18,8 +18,9 @@ No external dependencies.
 {
   "68mschmitt/gloss.nvim",
   cmd = {
-    "GlossAdd", "GlossDelete", "GlossToggle", "GlossToggleAll",
-    "GlossNext", "GlossPrev", "GlossAttach",
+    "GlossAdd", "GlossDelete", "GlossEdit", "GlossToggle",
+    "GlossToggleAll", "GlossNext", "GlossPrev", "GlossAttach",
+    "GlossList",
   },
   opts = {},
 }
@@ -49,15 +50,17 @@ appears in the gutter. `:GlossToggle` expands or collapses the
 annotation under the cursor. `:GlossToggleAll` hides or shows all
 annotations in the buffer.
 
-| Command           | Description                                |
-|-------------------|--------------------------------------------|
-| `:GlossAdd`       | Add annotation at cursor or visual selection |
-| `:GlossDelete`    | Delete annotation under cursor             |
-| `:GlossToggle`    | Toggle annotation under cursor             |
-| `:GlossToggleAll` | Toggle all annotations in current buffer   |
-| `:GlossNext`      | Cycle to next overlapping annotation       |
-| `:GlossPrev`      | Cycle to previous overlapping annotation   |
-| `:GlossAttach`    | Attach a gloss file to the current buffer  |
+| Command           | Description                                       |
+|-------------------|---------------------------------------------------|
+| `:GlossAdd`       | Add annotation at cursor or visual selection      |
+| `:GlossDelete`    | Delete annotation under cursor                    |
+| `:GlossEdit`      | Edit annotation under cursor                      |
+| `:GlossToggle`    | Toggle annotation under cursor                    |
+| `:GlossToggleAll` | Toggle all annotations in current buffer          |
+| `:GlossNext`      | Cycle to next overlapping annotation              |
+| `:GlossPrev`      | Cycle to previous overlapping annotation          |
+| `:GlossAttach`    | Attach a gloss file to the current buffer         |
+| `:GlossList`      | List all annotations in the quickfix list         |
 
 ### Suggested keymaps
 
@@ -66,10 +69,12 @@ The plugin does not define default keybindings. Map them however you want:
 ```lua
 vim.keymap.set({ "n", "v" }, "<leader>ga", "<cmd>GlossAdd<cr>", { desc = "Add gloss" })
 vim.keymap.set("n", "<leader>gd", "<cmd>GlossDelete<cr>", { desc = "Delete gloss" })
+vim.keymap.set("n", "<leader>ge", "<cmd>GlossEdit<cr>", { desc = "Edit gloss" })
 vim.keymap.set("n", "<leader>gt", "<cmd>GlossToggle<cr>", { desc = "Toggle gloss" })
 vim.keymap.set("n", "<leader>gT", "<cmd>GlossToggleAll<cr>", { desc = "Toggle all glosses" })
 vim.keymap.set("n", "<leader>gn", "<cmd>GlossNext<cr>", { desc = "Next gloss" })
 vim.keymap.set("n", "<leader>gp", "<cmd>GlossPrev<cr>", { desc = "Previous gloss" })
+vim.keymap.set("n", "<leader>gl", "<cmd>GlossList<cr>", { desc = "List glosses" })
 ```
 
 ## Configuration
@@ -102,8 +107,8 @@ All values shown are defaults. Pass only what you want to change.
 | Group                  | Default                              | Description                  |
 |------------------------|--------------------------------------|------------------------------|
 | `GlossSign`            | `fg=#7aa2f7, bold`                   | Sign column icon             |
-| `GlossHighlight`       | `underline, sp=#565f89`              | Annotated text (collapsed)   |
-| `GlossHighlightActive` | `underline, sp=#7aa2f7`             | Annotated text (expanded)    |
+| `GlossHighlight`       | `underline, sp=#FFFF00`              | Annotated text (collapsed)   |
+| `GlossHighlightActive` | `underline, sp=#7aa2f7, bg=#1a1b2e` | Annotated text (expanded)    |
 
 Override with:
 
