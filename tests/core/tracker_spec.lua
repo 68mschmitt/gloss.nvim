@@ -12,7 +12,6 @@ local config = require('gloss.config')
 T['setup'] = new_set({
   hooks = {
     pre_case = function()
-      math.randomseed(12345)
       config.setup({
         state_dir = vim.fn.tempname() .. '_gloss_test',
       })

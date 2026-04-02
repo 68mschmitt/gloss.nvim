@@ -15,7 +15,6 @@ local test_state_dir
 T['setup'] = new_set({
   hooks = {
     pre_case = function()
-      math.randomseed(12345)
       test_state_dir = vim.fn.tempname() .. '_gloss_test'
       vim.fn.mkdir(test_state_dir, 'p')
       config.setup({ state_dir = test_state_dir })

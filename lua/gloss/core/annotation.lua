@@ -21,10 +21,13 @@ local M = {}
 local buffer_annotations = {}
 
 --- Generate a unique annotation ID.
---- Format: timestamp-random_hex (e.g. "1743465600-a3f2")
+--- Uses vim.uv.hrtime() for nanosecond-resolution uniqueness,
+--- avoiding pollution of the global Lua PRNG.
+--- Format: timestamp-hrtime_hex (e.g. "1743465600-00000003a3f2b1c0")
 --- @return string
 local function generate_id()
-  return string.format('%d-%04x', os.time(), math.random(0, 0xFFFF))
+  local hrtime = vim.uv.hrtime()
+  return string.format('%d-%016x', os.time(), hrtime)
 end
 
 --- Compute a content hash for the referenced text in a buffer.

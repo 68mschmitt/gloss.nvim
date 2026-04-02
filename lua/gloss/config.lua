@@ -28,10 +28,26 @@ local defaults = {
 --- @type gloss.Config|nil
 local current = nil
 
+--- Validate user-provided options.
+--- @param opts table
+local function validate(opts)
+  vim.validate('state_dir', opts.state_dir, 'string', true)
+  vim.validate('sign_text', opts.sign_text, 'string', true)
+  vim.validate('sign_hl', opts.sign_hl, 'string', true)
+  vim.validate('hl_group', opts.hl_group, 'string', true)
+  vim.validate('float_border', opts.float_border, { 'string', 'table' }, true)
+  vim.validate('float_max_width', opts.float_max_width, 'number', true)
+  vim.validate('float_max_height', opts.float_max_height, 'number', true)
+  vim.validate('edit_height', opts.edit_height, 'number', true)
+end
+
 --- Merge user options with defaults and store the result.
 --- @param opts table|nil User-provided options
 --- @return gloss.Config
 function M.setup(opts)
+  if opts then
+    validate(opts)
+  end
   current = vim.tbl_deep_extend('force', {}, defaults, opts or {})
   return current
 end

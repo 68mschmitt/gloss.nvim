@@ -13,9 +13,6 @@ function M.setup(opts)
   end
   is_setup = true
 
-  -- Seed random for ID generation
-  math.randomseed(os.time() + os.clock() * 1000)
-
   -- Merge config
   local config = require('gloss.config')
   config.setup(opts)

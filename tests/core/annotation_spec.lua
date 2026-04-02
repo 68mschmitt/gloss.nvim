@@ -17,10 +17,7 @@ end
 -- Helper: clean up after each test
 T['setup'] = new_set({
   hooks = {
-    pre_case = function()
-      -- Seed random for reproducible IDs in tests
-      math.randomseed(12345)
-    end,
+    pre_case = function() end,
   },
 })
 
