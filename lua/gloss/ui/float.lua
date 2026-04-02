@@ -20,9 +20,7 @@ local active_floats = {}
 --- @param cfg gloss.Config
 --- @return table opts Options table for nvim_open_win
 local function compute_position(source_bufnr, line, content_height, cfg)
-  local win_width = vim.api.nvim_win_get_width(0)
   local win_height = vim.api.nvim_win_get_height(0)
-  local width = math.min(cfg.float_max_width, win_width - 4)
   local height = math.min(content_height, cfg.float_max_height)
 
   -- Account for sign column / number column offset

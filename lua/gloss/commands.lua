@@ -337,7 +337,8 @@ function M.register(annotation_mod, store_mod, tracker_mod)
   end
 
   -- :GlossAttach — attach a gloss file to current buffer
-  handlers['GlossAttach'] = function(_opts)
+  -- Accepts optional file path argument: :GlossAttach /path/to/file.json
+  handlers['GlossAttach'] = function(opts)
     local bufnr = vim.api.nvim_get_current_buf()
     local filepath = vim.api.nvim_buf_get_name(bufnr)
     if filepath == '' then
@@ -345,6 +346,18 @@ function M.register(annotation_mod, store_mod, tracker_mod)
       return
     end
 
+    local args = vim.trim(opts.args or '')
+
+    if args ~= '' then
+      -- Direct path provided as argument — resolve to absolute
+      local resolved = vim.fn.fnamemodify(args, ':p')
+      store_mod.load(bufnr, filepath, resolved)
+      tracker_mod.reconcile(bufnr, annotation_mod)
+      rerender(bufnr)
+      return
+    end
+
+    -- Interactive: select default or custom
     vim.ui.select({ 'Default location', 'Custom file...' }, {
       prompt = 'Gloss file location:',
     }, function(choice)
@@ -367,6 +380,38 @@ function M.register(annotation_mod, store_mod, tracker_mod)
         end)
       end
     end)
+  end
+
+  -- :GlossList — populate quickfix with all annotations in buffer
+  handlers['GlossList'] = function(_opts)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local annotations = annotation_mod.list(bufnr)
+
+    if not annotations or #annotations == 0 then
+      vim.notify('gloss: no annotations in buffer', vim.log.levels.INFO)
+      return
+    end
+
+    local qf_items = {}
+    for _, ann in ipairs(annotations) do
+      -- First line of content as description, truncated
+      local first_line = (ann.content or ''):match('^[^\n]*') or ''
+      if #first_line > 80 then
+        first_line = first_line:sub(1, 77) .. '...'
+      end
+
+      table.insert(qf_items, {
+        bufnr = bufnr,
+        lnum = ann.line_start + 1, -- 1-indexed for quickfix
+        col = ann.col_start and (ann.col_start + 1) or 1,
+        text = string.format('[%s] %s', ann.location_type, first_line),
+        type = 'I', -- info
+      })
+    end
+
+    vim.fn.setqflist({}, 'r', { title = 'Gloss annotations', items = qf_items })
+    vim.cmd('copen')
+    vim.notify(string.format('gloss: %d annotation(s) in quickfix', #qf_items), vim.log.levels.INFO)
   end
 
   -- Register all commands with neovim
