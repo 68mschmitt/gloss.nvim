@@ -227,4 +227,11 @@ function M.get_gloss_path(bufnr)
   return buffer_gloss_paths[bufnr]
 end
 
+--- Clear all in-memory state for a buffer (used on buffer unload).
+--- @param bufnr integer
+function M.clear(bufnr)
+  buffer_filepaths[bufnr] = nil
+  buffer_gloss_paths[bufnr] = nil
+end
+
 return M

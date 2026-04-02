@@ -86,12 +86,24 @@ function M.setup(opts)
     end,
   })
 
-  -- On buffer unload: clean up float windows
+  -- On buffer unload: clean up all in-memory state
   vim.api.nvim_create_autocmd('BufUnload', {
     group = augroup,
     callback = function(ev)
+      local bufnr = ev.buf
+      -- Skip scratch/float buffers (their BufUnload fires re-entrantly
+      -- when float.close_all wipes the backing buffer)
+      if vim.bo[bufnr].buftype ~= '' then
+        return
+      end
+      -- Lazy-require UI modules (only needed at cleanup time)
       local float = require('gloss.ui.float')
-      float.close_all(ev.buf)
+      local cycle = require('gloss.ui.cycle')
+      float.close_all(bufnr)
+      annotation.clear(bufnr)
+      tracker.clear(bufnr)
+      store.clear(bufnr)
+      cycle.clear(bufnr)
     end,
   })
 end
