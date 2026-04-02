@@ -87,15 +87,23 @@ function M.register(annotation_mod, store_mod, tracker_mod)
   -- :GlossAdd — add annotation at current location
   handlers['GlossAdd'] = function(opts)
     local bufnr = vim.api.nvim_get_current_buf()
-    local mode = vim.fn.mode()
     local line_start, line_end, col_start, col_end
     local location_type
 
     if opts.range == 2 then
-      -- Visual selection range (line-wise from command range)
+      -- Visual selection — check visual mode for charwise vs linewise
+      local vmode = vim.fn.visualmode()
       line_start = opts.line1 - 1 -- convert to 0-indexed
       line_end = opts.line2 - 1
-      if line_start == line_end then
+
+      if vmode == 'v' and line_start == line_end then
+        -- Charwise visual on a single line: word-level annotation
+        local start_pos = vim.fn.getpos("'<")
+        local end_pos = vim.fn.getpos("'>")
+        col_start = start_pos[3] - 1 -- 0-indexed
+        col_end = end_pos[3] -- exclusive end (getpos is 1-indexed inclusive)
+        location_type = 'word'
+      elseif line_start == line_end then
         location_type = 'line'
       else
         location_type = 'range'
