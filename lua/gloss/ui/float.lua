@@ -71,35 +71,73 @@ local function compute_position(source_bufnr, line, content_height, cfg)
 end
 
 --- Wrap content lines to fit within the float width.
+--- Uses display width for correct multi-byte character handling.
+--- Preserves lines inside fenced code blocks (``` ... ```) unwrapped.
 --- @param lines string[]
---- @param width integer
+--- @param width integer Display width to wrap at
 --- @return string[]
 local function wrap_lines(lines, width)
   local result = {}
+  local in_code_block = false
+
   for _, line in ipairs(lines) do
-    if #line <= width then
+    -- Toggle code block state on fence markers
+    if line:match('^```') then
+      in_code_block = not in_code_block
+      table.insert(result, line)
+    elseif in_code_block then
+      -- Don't wrap inside code blocks
+      table.insert(result, line)
+    elseif vim.fn.strdisplaywidth(line) <= width then
       table.insert(result, line)
     else
-      -- Simple word-wrap
-      local pos = 1
-      while pos <= #line do
-        local segment = line:sub(pos, pos + width - 1)
-        -- Try to break at a space if we're not at the end
-        if pos + width - 1 < #line then
-          local last_space = segment:match('.*() ')
-          if last_space and last_space > width * 0.4 then
-            segment = line:sub(pos, pos + last_space - 2)
-            pos = pos + last_space
+      -- Word-wrap using display widths and character-safe slicing
+      local chars = {}
+      for _, c in vim.fn.str2list(line, true) do
+        table.insert(chars, vim.fn.nr2char(c))
+      end
+
+      local current = {}
+      local current_width = 0
+
+      for _, ch in ipairs(chars) do
+        local ch_width = vim.fn.strdisplaywidth(ch)
+
+        if current_width + ch_width > width and #current > 0 then
+          -- Try to break at a space
+          local seg = table.concat(current)
+          local last_space = seg:match('.*() ')
+          if last_space and vim.fn.strdisplaywidth(seg:sub(1, last_space - 1)) > width * 0.4 then
+            -- Break at last space
+            table.insert(result, seg:sub(1, last_space - 1))
+            -- Carry over the remainder after the space
+            local remainder = seg:sub(last_space + 1)
+            current = {}
+            current_width = 0
+            for _, rc in vim.fn.str2list(remainder, true) do
+              local rch = vim.fn.nr2char(rc)
+              table.insert(current, rch)
+              current_width = current_width + vim.fn.strdisplaywidth(rch)
+            end
           else
-            pos = pos + width
+            -- Hard break at width
+            table.insert(result, seg)
+            current = {}
+            current_width = 0
           end
-        else
-          pos = pos + width
         end
-        table.insert(result, segment)
+
+        table.insert(current, ch)
+        current_width = current_width + ch_width
+      end
+
+      -- Flush remaining
+      if #current > 0 then
+        table.insert(result, table.concat(current))
       end
     end
   end
+
   return result
 end
 
@@ -124,7 +162,7 @@ function M.open(source_bufnr, annotation_id, content, line, cfg)
   local lines = vim.split(content, '\n', { plain = true })
   local win_width = vim.api.nvim_win_get_width(0)
   local width = math.min(cfg.float_max_width, win_width - 4)
-  local wrapped = wrap_lines(lines, width - 2) -- account for padding
+  local wrapped = wrap_lines(lines, width) -- border is excluded from content area by neovim
 
   vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, wrapped)
   vim.bo[float_buf].modifiable = false
